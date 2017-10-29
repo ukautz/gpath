@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/ukautz/gpath.svg?branch=master)](https://travis-ci.org/ukautz/gpath)
-[![Coverage](http://gocover.io/_badge/github.com/ukautz/gpath)](http://gocover.io/github.com/ukautz/gpath)
+[![Coverage](http://gocover.io/_badge/github.com/ukautz/gpath?v=0.1.0)](http://gocover.io/github.com/ukautz/gpath)
 [![GoDoc](https://godoc.org/github.com/ukautz/gpath?status.svg)](https://godoc.org/github.com/ukautz/gpath)
 
 GPath
@@ -73,7 +73,7 @@ Installation
 ------------
 
 ```bash
-go get github.com/ukautz/cast
+go get github.com/ukautz/gpath
 ```
 
 This package supports version tags for [package management tools](https://github.com/golang/go/wiki/PackageManagementTools).
