@@ -1,0 +1,4 @@
+vendor/
+glide.lock
+cover.out
+coverage.html
