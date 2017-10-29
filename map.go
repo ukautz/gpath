@@ -2,6 +2,9 @@ package gpath
 
 import "reflect"
 
+// MapKey returns value in provided map with given key. Second return parameter is false, if requested
+// key was not found (or key type is not compatible with type of keys of map or provided map is not
+// actually a map)
 func MapKey(m, k interface{}) (interface{}, bool) {
 	if v := MapKeyValue(reflect.ValueOf(m), reflect.ValueOf(k)); v == nil {
 		return nil, false
@@ -10,6 +13,9 @@ func MapKey(m, k interface{}) (interface{}, bool) {
 	}
 }
 
+// MapKeyValue returns pointer to reflect.Value in provided map with given key or nil, if requested
+// key was not found (or key type is not compatible with type of keys of map or provided map is not
+// actually a map)
 func MapKeyValue(m, k reflect.Value) *reflect.Value {
 	if m.Kind() != reflect.Map {
 		return nil
