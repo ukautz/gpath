@@ -2,6 +2,15 @@ package gpath
 
 import "github.com/ukautz/cast"
 
+// IsFloat returns bool whether path exists AND can be cast to float (eg int(123), string("123.234") (=int(123)) or float64(123.234) (=int(123)))
+func (gp *GPath) IsFloat(path string) bool {
+	if val, has := gp.get(path); has {
+		_, ok := cast.CastFloat(val)
+		return ok
+	}
+	return false
+}
+
 // GetFloat returns the value of the path as float64, if it is a float64 or can be casted into a float64
 func (gp *GPath) GetFloat(path string, fallback ...float64) float64 {
 	if val, has := gp.get(path); has {

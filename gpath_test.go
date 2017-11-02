@@ -2,6 +2,7 @@ package gpath
 
 import (
 	"github.com/stretchr/testify/assert"
+	"reflect"
 	"testing"
 )
 
@@ -138,42 +139,47 @@ func TestGPath_IsMap(t *testing.T) {
 	}
 }
 
-func TestGPath_Get(t *testing.T) {
-	gp := _newGPath()
-	expects := []struct {
-		path   string
-		expect interface{}
-	}{
-		{"string", "bar"},
-		{"strings", []string{"a", "b", "c"}},
-		{"int", 123},
-		{"ints", []int{3, 4, 5}},
-		{"float", 12.5},
-		{"floats", []float32{3.5, 4.5, 5.5}},
-		{"mixed-ok", []interface{}{"1.5", uint(2), float32(3.5)}},
-		{"mixed-ok.0", "1.5"},
-		{"mixed-ok.1", uint(2)},
-		{"mixed-ok.2", float32(3.5)},
-		{"mixed-nok", []interface{}{"aaa", uint(2), float32(3.5)}},
-		{"mixed-nok.0", "aaa"},
-		{"mixed-nok.1", uint(2)},
-		{"mixed-nok.2", float32(3.5)},
-		{"complex", map[string]interface{}{"inner": []interface{}{"str", 123, 12.5}}},
-		{"complex.inner", []interface{}{"str", 123, 12.5}},
-		{"complex.inner.0", "str"},
-		{"complex.inner.1", 123},
-		{"complex.inner.2", 12.5},
-		{"other", nil},
-		{"mixed-ok.3", nil},
-		{"mixed-nok.-1", nil},
-		{"mixed-nok.a", nil},
-		{"complex.other", nil},
-		{"complex.inner.4", nil},
-	}
-	for _, expect := range expects {
-		//fmt.Printf("E: %###v\n", expect)
-		val := gp.Get(expect.path)
-		//fmt.Printf("V: %###v\n", val)
-		assert.Equal(t, expect.expect, val, "Path %s should be %###v", expect.path, expect.expect)
-	}
+func TestGPath_Set(t *testing.T) {
+	type mi_t map[interface{}]interface{}
+	gp := New(mi_t{})
+	assert.Equal(t, reflect.Map, reflect.ValueOf(mi_t{}).Kind(), "type renaming keeps kind")
+
+	assert.Nil(t, gp.Set("foo", "bar"), "can set root level key")
+	assert.Contains(t, gp.source.(mi_t), "foo", "foo key was created")
+	assert.Equal(t, "bar", gp.source.(mi_t)["foo"], "foo key was created")
+
+	assert.NotNil(t, gp.Set("bar.baz", 234), "cannot set deep structure with missing parents")
+
+	assert.Nil(t, gp.Set("bar", mi_t{"baz": 234}), "cannot set deep structure with missing parents")
+	assert.Contains(t, gp.source.(mi_t), "bar", "bar key was created")
+	assert.Contains(t, gp.source.(mi_t)["bar"], "baz", "bar.baz key was created")
+	assert.Equal(t, 234, gp.source.(mi_t)["bar"].(mi_t)["baz"], "foo key was created")
+
+	assert.Nil(t, gp.Set("bar.zoing", 345), "can now set other child elements")
+	assert.Contains(t, gp.source.(mi_t)["bar"], "zoing", "bar.zoing key was created")
+	assert.Equal(t, 345, gp.source.(mi_t)["bar"].(mi_t)["zoing"], "foo key was created")
+
+	gp = New(mi_t{"strs": []string{}})
+	assert.Nil(t, gp.Set("strs.-1", "foo"), "can add slice element")
+	assert.Contains(t, gp.source.(mi_t), "strs", "parent is still here")
+	assert.Equal(t, gp.source.(mi_t)["strs"], []string{"foo"}, "slice value added")
+
+	gp = New(mi_t{"iii": []interface{}{[]interface{}{[]interface{}{"foo"}}}})
+	assert.Nil(t, gp.Set("iii.0.0.-1", "bar"), "can add slice within slices element")
+	assert.Contains(t, gp.source.(mi_t), "iii", "parent is still here")
+	assert.Equal(t, []interface{}{[]interface{}{[]interface{}{"foo", "bar"}}}, gp.source.(mi_t)["iii"], "foo was created")
+
+	ss := []string{}
+	gp = New(&ss)
+	assert.Nil(t, gp.Set("-1", "bar"), "can add to indirect slice ref")
+	assert.Equal(t, &[]string{"bar"}, gp.source.(*[]string), "added to slice ref")
+
+	gp = New(ss)
+	assert.NotNil(t, gp.Set("-1", "bar"), "can NOT add to direct slice")
+
+	gp = New(&ss)
+	assert.NotNil(t, gp.Set("key", "bar"), "can NOT set string key in slice ref")
+
+	gp = New("string")
+	assert.NotNil(t, gp.Set("key", "bar"), "can NOT set in scalar")
 }

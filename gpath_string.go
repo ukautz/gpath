@@ -4,6 +4,15 @@ import (
 	"github.com/ukautz/cast"
 )
 
+// IsString returns bool whether path exists AND can be cast to string (eg actual string, int, or float)
+func (gp *GPath) IsString(path string) bool {
+	if val, has := gp.get(path); has {
+		_, ok := cast.CastString(val)
+		return ok
+	}
+	return false
+}
+
 // GetString returns the value of the path as string, if it is a string or can be casted into a string
 func (gp *GPath) GetString(path string, fallback ...string) string {
 	if val, has := gp.get(path); has {

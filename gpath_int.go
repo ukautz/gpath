@@ -4,6 +4,15 @@ import (
 	"github.com/ukautz/cast"
 )
 
+// IsInt returns bool whether path exists AND can be cast to int (eg int(123), string("123.234") (=int(123)) or float64(123.234) (=int(123)))
+func (gp *GPath) IsInt(path string) bool {
+	if val, has := gp.get(path); has {
+		_, ok := cast.CastInt(val)
+		return ok
+	}
+	return false
+}
+
 // GetInt returns the value of the path as int64, if it is a int64 or can be casted into a int64
 func (gp *GPath) GetInt(path string, fallback ...int64) int64 {
 	if val, has := gp.get(path); has {
