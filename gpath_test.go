@@ -102,40 +102,101 @@ func TestGPath_IsSlice(t *testing.T) {
 	}
 }
 
-func TestGPath_IsMap(t *testing.T) {
+
+func TestGPath_Get(t *testing.T) {
 	gp := _newGPath()
 	expects := []struct {
 		path   string
-		expect bool
+		expect interface{}
 	}{
-		{"string", false},
-		{"strings", false},
-		{"int", false},
-		{"ints", false},
-		{"float", false},
-		{"floats", false},
-		{"mixed-ok", false},
-		{"mixed-ok.0", false},
-		{"mixed-ok.1", false},
-		{"mixed-ok.2", false},
-		{"mixed-nok", false},
-		{"mixed-nok.0", false},
-		{"mixed-nok.1", false},
-		{"mixed-nok.2", false},
-		{"complex", true},
-		{"complex.inner", false},
-		{"complex.inner.0", false},
-		{"complex.inner.1", false},
-		{"complex.inner.2", false},
-		{"other", false},
-		{"mixed-ok.3", false},
-		{"mixed-nok.-1", false},
-		{"mixed-nok.a", false},
-		{"complex.other", false},
-		{"complex.inner.4", false},
+		{"string", "bar"},
+		{"strings", []string{"a", "b", "c"}},
+		{"int", 123},
+		{"ints", []int{3, 4, 5}},
+		{"float", 12.5},
+		{"floats", []float32{3.5, 4.5, 5.5}},
+		{"mixed-ok", []interface{}{"1.5", uint(2), float32(3.5)}},
+		{"mixed-ok.0", "1.5"},
+		{"mixed-ok.1", uint(2)},
+		{"mixed-ok.2", float32(3.5)},
+		{"mixed-nok", []interface{}{"aaa", uint(2), float32(3.5)}},
+		{"mixed-nok.0", "aaa"},
+		{"mixed-nok.1", uint(2)},
+		{"mixed-nok.2", float32(3.5)},
+		{"complex", map[string]interface{}{
+			"inner": []interface{}{
+				"str",
+				123,
+				12.5,
+			},
+		}},
+		{"complex.inner", []interface{}{"str", 123, 12.5}},
+		{"complex.inner.0", "str"},
+		{"complex.inner.1", 123},
+		{"complex.inner.2", 12.5},
+		{"other", nil},
+		{"mixed-ok.3", nil},
+		{"mixed-nok.-1", nil},
+		{"mixed-nok.a", nil},
+		{"complex.other", nil},
+		{"complex.inner.4", nil},
 	}
 	for _, expect := range expects {
-		assert.Equal(t, expect.expect, gp.IsMap(expect.path), "Path %s should be %v", expect.path, expect.expect)
+		assert.Equal(t, expect.expect, gp.Get(expect.path), "Path %s should be %v", expect.path, expect.expect)
+	}
+}
+
+
+func TestGPath_GetChild(t *testing.T) {
+	gp := _newGPath()
+	gp.source.(map[string]interface{})["strings-ptr"] = &[]string{"xxx"}
+	gp.source.(map[string]interface{})["maps-ptr"] = &map[string]interface{}{"foo": "bar"}
+	expects := []struct {
+		path   string
+		expect interface{}
+	}{
+		{"string", nil},
+		{"strings", &[]string{"a", "b", "c"}},
+		{"int", nil},
+		{"ints", &[]int{3, 4, 5}},
+		{"float", nil},
+		{"floats", &[]float32{3.5, 4.5, 5.5}},
+		{"mixed-ok", &[]interface{}{"1.5", uint(2), float32(3.5)}},
+		{"mixed-ok.0", nil},
+		{"mixed-ok.1", nil},
+		{"mixed-ok.2", nil},
+		{"mixed-nok", &[]interface{}{"aaa", uint(2), float32(3.5)}},
+		{"mixed-nok.0",nil},
+		{"mixed-nok.1", nil},
+		{"mixed-nok.2", nil},
+		{"complex", map[string]interface{}{
+			"inner": []interface{}{
+				"str",
+				123,
+				12.5,
+			},
+		}},
+		{"complex.inner", &[]interface{}{"str", 123, 12.5}},
+		{"complex.inner.0", nil},
+		{"complex.inner.1", nil},
+		{"complex.inner.2", nil},
+		{"strings-ptr", &[]string{"xxx"}},
+		{"maps-ptr", &map[string]interface{}{"foo": "bar"}},
+		{"other", nil},
+		{"mixed-ok.3", nil},
+		{"mixed-nok.-1", nil},
+		{"mixed-nok.a", nil},
+		{"complex.other", nil},
+		{"complex.inner.4", nil},
+	}
+	for _, expect := range expects {
+		val := gp.GetChild(expect.path)
+		if expect.expect == nil {
+			assert.Nil(t, val, "Path %s should be nil but is %###v", expect.path, val)
+		} else {
+			assert.NotNil(t, val, "Path %s should not be nil but is", expect.path)
+			assert.Equal(t, expect.expect, val.source, "Path %s should be %###v", expect.path, expect.expect)
+		}
 	}
 }
 

@@ -2,12 +2,11 @@
 package gpath
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
-	"sync"
-	"errors"
 )
 
 // GPath provides path based access to map or slice data structures in Go. Additionally type conversion
@@ -42,15 +41,6 @@ func (gp *GPath) IsSlice(path string) bool {
 	return false
 }
 
-// IsMap returns bool whether path exists AND is a map of some kind
-func (gp *GPath) IsMap(path string) bool {
-	if val, has := gp.get(path); has {
-		r := vof(val)
-		return r.Kind() == reflect.Map
-	}
-	return false
-}
-
 // Get returns the value of path - or nil, if it does not exist
 func (gp *GPath) Get(path string) interface{} {
 	val, _ := gp.get(path)
@@ -62,6 +52,10 @@ func (gp *GPath) Set(path string, value interface{}) error {
 	var to interface{}
 	key := ""
 	root := ""
+
+	// find parent:
+	// path is either of root (no "."), which makes root the parent, or or below root (with "."), which
+	// makes the "path's parent" the parent. So path="foo" -> root is parent and "foo.bar" -> "foo" is parent
 	if idx := strings.LastIndex(path, "."); idx <= 0 {
 		to = gp.source
 		key = path
@@ -78,6 +72,10 @@ func (gp *GPath) Set(path string, value interface{}) error {
 	ref := vof(to)
 	refk := ref.Kind()
 	isref := true
+
+	// make parent a pointer:
+	// we want to support *map, map, *slice and slice alike. For simplification,
+	// just cast now map -> *map or slice -> *slice
 	if refk == reflect.Slice || refk == reflect.Map {
 		ptr := reflect.New(ref.Type())
 		ptr.Elem().Set(ref)
@@ -85,26 +83,35 @@ func (gp *GPath) Set(path string, value interface{}) error {
 		refk = ref.Kind()
 		isref = false
 	}
-	if refk == reflect.Ptr {
-		switch ref.Elem().Kind() {
-		case reflect.Slice:
-			if key != "-1" && !isUInt(key) {
-				return fmt.Errorf("cannot write to \"%s\" as %s is a slice, not a map, and requires positive integer indices", key, root)
-			} else if root == "." && !isref {
-				return errors.New("parent element cannot be slice. Provide either pointer to slice or slice embedded within maps")
-			}
-			idx, _ := strconv.Atoi(key)
-			if set = SliceIndexSet(ref.Interface(), idx, value, true); set {
-				if !isref && root != "." {
-					return gp.Set(root[1:], ref.Elem().Interface())
-				} else {
-					return nil
-				}
-			}
-		case reflect.Map:
-			set = MapKeySet(ref.Elem().Interface(), key, value, true)
-		}
+
+	// at this point, must be pointer || fail
+	if refk != reflect.Ptr {
+		return fmt.Errorf("could not set %s in %s (%s)", path, root, reflect.ValueOf(to).Kind())
 	}
+
+	// now:
+	// for slice -> set new value in pointer to slice
+	// for map -> just put it in there
+	switch ref.Elem().Kind() {
+	case reflect.Slice:
+		if key != "-1" && !isUInt(key) {
+			return fmt.Errorf("cannot write to \"%s\" as %s is a slice, not a map, and requires positive integer indices", key, root)
+		} else if root == "." && !isref {
+			return errors.New("parent element cannot be slice. Provide either pointer to slice or slice embedded within maps")
+		}
+		idx, _ := strconv.Atoi(key)
+		if set = SliceIndexSet(ref.Interface(), idx, value, true); set {
+			if !isref && root != "." {
+				return gp.Set(root[1:], ref.Elem().Interface())
+			} else {
+				return nil
+			}
+		}
+	case reflect.Map:
+		set = MapKeySet(ref.Elem().Interface(), key, value, true)
+	}
+
+	// when anything was actually changed -> write in cache + clear all below cache, as it is gone
 	if set {
 		gp.traversals.set(path, value)
 		gp.traversals.clear(path + ".")
@@ -112,7 +119,31 @@ func (gp *GPath) Set(path string, value interface{}) error {
 	} else {
 		return fmt.Errorf("could not set %s in %s (%s)", path, root, reflect.ValueOf(to).Kind())
 	}
+}
 
+// GetChild returns path value as *gpath.GPath (child) object, if the path value is either a Map or a Slice of any kind.
+// In case of slice, a reference to the slice is used. Otherwise nil is returned.
+func (gp *GPath) GetChild(path string) *GPath {
+	if val, ok := gp.get(path); ok {
+		ref := reflect.ValueOf(val)
+		switch refk := ref.Kind(); refk {
+		case reflect.Slice:
+			ptr := reflect.New(ref.Type())
+			ptr.Elem().Set(ref)
+			return New(ptr.Interface())
+		case reflect.Map:
+			return New(ref.Interface())
+		case reflect.Ptr:
+			elem := ref.Elem()
+			switch elemk := elem.Kind(); elemk {
+			case reflect.Slice:
+				return New(ref.Interface())
+			case reflect.Map:
+				return New(ref.Interface())
+			}
+		}
+	}
+	return nil
 }
 
 func (gp *GPath) get(path string) (interface{}, bool) {
@@ -160,50 +191,4 @@ func isUInt(word string) bool {
 func splitPath(path string) (string, []string) {
 	p := strings.Split(path, ".")
 	return p[0], p[1:]
-}
-
-// traversals implements concurrency safe map (I want to support Go < 1.9, so no sync.Map ..)
-type cache struct {
-	data map[string]interface{}
-	mux  *sync.RWMutex
-}
-
-func newCache(data map[string]interface{}) *cache {
-	return &cache{
-		data: data,
-		mux:  new(sync.RWMutex),
-	}
-}
-
-func (c *cache) get(key string) (interface{}, bool) {
-	c.mux.RLock()
-	defer c.mux.RUnlock()
-	if v, ok := c.data[key]; ok {
-		return v, true
-	}
-	return nil, false
-}
-
-func (c *cache) set(key string, value interface{}) interface{} {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-	c.data[key] = value
-	return value
-}
-
-func (c *cache) clear(prefix string) int {
-	count := 0
-	keys := []string{}
-	c.mux.Lock()
-	defer c.mux.Unlock()
-	for key, _ := range c.data {
-		keys = append(keys, key)
-	}
-	for _, key := range keys {
-		if strings.HasPrefix(key, prefix) {
-			count++
-			delete(c.data, key)
-		}
-	}
-	return count
 }

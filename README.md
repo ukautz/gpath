@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/ukautz/gpath.svg?branch=master)](https://travis-ci.org/ukautz/gpath)
-[![Coverage](http://gocover.io/_badge/github.com/ukautz/gpath?v=0.1.1)](http://gocover.io/github.com/ukautz/gpath)
+[![Coverage](https://gocover.io/_badge/github.com/ukautz/gpath?v=0.1.1)](http://gocover.io/github.com/ukautz/gpath)
 [![GoDoc](https://godoc.org/github.com/ukautz/gpath?status.svg)](https://godoc.org/github.com/ukautz/gpath)
 
 GPath
@@ -13,24 +13,37 @@ GPath provides path based access to map or slice data structures in Go. Addition
 ```go
 package example
 
-import "github.com/ukautz/gpath"
+import (
+	"github.com/ukautz/gpath"
+	"encoding/json"
+	"io/ioutil"
+)
 
 func example() {
 	
-	// have some data
-	data := map[string]interface{}{
+	/*
+	/some/file.json contents:
+	{
 		"foo1": "bar",
 		"foo2": 123,
 		"foo3": 33.44,
-		"baz": []interface{}{
-			map[string]interface{}{
-				"bla": "blub",
-			},
+		"baz": [
+			{"bla": "blub"},
 			123.45,
-			[]string{"a", "b", "c"},
-			[]int{2, 3, 4},
-			[]float32{1.1, 2.2, 3.3},
-		},
+			["a", "b", "c"],
+			[2, 3, 4],
+			[1.1, 2.2, 3.3]
+		}
+	}
+	*/
+	raw, err := ioutil.ReadFile("/some/file.json")
+	if err != nil {
+		panic(err)
+	}
+	data := make(map[string]interface{})
+	err = json.Unmarshal(raw, &data)
+	if err != nil {
+		panic(err)
 	}
 	
 	// read it
@@ -66,6 +79,10 @@ func example() {
 	
 	// .. as long as it's possible
 	fs = gp.GetFloats("baz.2") // nil
+	
+	// .. also work with partial data
+	sub := gp.GetChild("baz")
+	sub.GetFloat("1") // float64(123.45)
 }
 ```
 
