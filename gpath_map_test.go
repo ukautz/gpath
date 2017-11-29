@@ -1,8 +1,8 @@
 package gpath
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestGPath_IsMap(t *testing.T) {
@@ -87,7 +87,7 @@ func TestGPath_GetMap(t *testing.T) {
 		} else {
 			assert.Equal(t, expect.expect, res, "Path %s should be %###v", expect.path, expect.expect)
 			ress := gp.GetMapString(expect.path)
-			assert.Equal(t, map[string]interface {}{"inner":[]interface {}{"str", 123, 12.5}}, ress, "Path %s should be that", expect.path)
+			assert.Equal(t, map[string]interface{}{"inner": []interface{}{"str", 123, 12.5}}, ress, "Path %s should be that", expect.path)
 		}
 
 		resss := gp.GetMapStringString(expect.path)

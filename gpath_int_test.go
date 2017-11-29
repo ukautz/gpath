@@ -1,16 +1,15 @@
 package gpath
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
-
 
 func TestGPath_IsInt(t *testing.T) {
 	gp := _newGPath()
 	expects := []struct {
-		path     string
-		expect   bool
+		path   string
+		expect bool
 	}{
 		{"string", false},
 		{"strings", false},

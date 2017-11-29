@@ -2,8 +2,8 @@ package gpath
 
 import (
 	"fmt"
-	"reflect"
 	"github.com/ukautz/cast"
+	"reflect"
 )
 
 // MapKey returns value in provided map with given key. Second return parameter is false, if requested

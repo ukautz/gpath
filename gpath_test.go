@@ -102,7 +102,6 @@ func TestGPath_IsSlice(t *testing.T) {
 	}
 }
 
-
 func TestGPath_Get(t *testing.T) {
 	gp := _newGPath()
 	expects := []struct {
@@ -146,7 +145,6 @@ func TestGPath_Get(t *testing.T) {
 	}
 }
 
-
 func TestGPath_GetChild(t *testing.T) {
 	gp := _newGPath()
 	gp.source.(map[string]interface{})["strings-ptr"] = &[]string{"xxx"}
@@ -166,7 +164,7 @@ func TestGPath_GetChild(t *testing.T) {
 		{"mixed-ok.1", nil},
 		{"mixed-ok.2", nil},
 		{"mixed-nok", &[]interface{}{"aaa", uint(2), float32(3.5)}},
-		{"mixed-nok.0",nil},
+		{"mixed-nok.0", nil},
 		{"mixed-nok.1", nil},
 		{"mixed-nok.2", nil},
 		{"complex", map[string]interface{}{

@@ -1,8 +1,8 @@
 package gpath
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestGPath_GetString(t *testing.T) {
@@ -55,8 +55,8 @@ func TestGPath_GetString(t *testing.T) {
 func TestGPath_IsString(t *testing.T) {
 	gp := _newGPath()
 	expects := []struct {
-		path     string
-		expect   bool
+		path   string
+		expect bool
 	}{
 		{"string", true},
 		{"strings", false},

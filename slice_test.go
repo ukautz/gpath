@@ -1,8 +1,8 @@
 package gpath
 
 import (
-	"github.com/stretchr/testify/assert"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -102,7 +102,6 @@ func TestSliceIndexSet(t *testing.T) {
 	assert.False(t, SliceIndexSet(&ss, -1, []map[string]interface{}{}, true), "Uncastable value cannot be appended")
 	assert.Equal(t, []string{"cde", "bla", "123"}, ss, "Unchanged after trying top add uncastable value")
 
-
 	ii := []interface{}{}
 	assert.True(t, SliceIndexSet(&ii, -1, "foo"), "Interface slice should accept anything (string)")
 	assert.Equal(t, []interface{}{"foo"}, ii, "String value added to interface slice")
@@ -115,7 +114,6 @@ func TestSliceIndexSet(t *testing.T) {
 
 	assert.True(t, SliceIndexSet(&ii, -1, []interface{}{999}), "Interface slice should accept anything (interface slice)")
 	assert.Equal(t, []interface{}{"foo", 123, 22.5, []interface{}{999}}, ii, "Interface slice value added to interface slice")
-
 
 	assert.False(t, SliceIndexSet("bla", -1, "foo"), "Appending to not-slice (string) fails")
 	assert.False(t, SliceIndexSet(map[string]interface{}{}, -1, "foo"), "Appending to not-slice (map) fails")

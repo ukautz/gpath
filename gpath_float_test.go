@@ -8,8 +8,8 @@ import (
 func TestGPath_IsFloat(t *testing.T) {
 	gp := _newGPath()
 	expects := []struct {
-		path     string
-		expect   bool
+		path   string
+		expect bool
 	}{
 		{"string", false},
 		{"strings", false},
