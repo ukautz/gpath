@@ -98,6 +98,9 @@ func TestGPath_GetMap(t *testing.T) {
 
 		ressf := gp.GetMapStringFloat(expect.path)
 		assert.Nil(t, ressf, "Path %s should be nil but is %###v", expect.path, ressf)
+
+		ressb := gp.GetMapStringBool(expect.path)
+		assert.Nil(t, ressb, "Path %s should be nil but is %###v", expect.path, ressb)
 	}
 }
 
@@ -118,6 +121,7 @@ func TestGPath_GetMapString(t *testing.T) {
 		"foo": map[string]interface{}{},
 	}, gp.GetMapString("ok2"))
 	assert.Nil(t, gp.GetMapString("ok3"))
+	assert.Equal(t, map[string]interface{}{"foo": "bla"}, gp.GetMapString("bla", map[string]interface{}{"foo": "bla"}))
 }
 
 func TestGPath_GetMapStringString(t *testing.T) {
@@ -135,6 +139,7 @@ func TestGPath_GetMapStringString(t *testing.T) {
 	}, gp.GetMapStringString("ok"))
 	assert.Nil(t, gp.GetMapStringString("nok"))
 	assert.Nil(t, gp.GetMapStringString("bla"))
+	assert.Equal(t, map[string]string{"foo": "bla"}, gp.GetMapStringString("bla", map[string]string{"foo": "bla"}))
 }
 
 func TestGPath_GetMapStringInt(t *testing.T) {
@@ -152,6 +157,7 @@ func TestGPath_GetMapStringInt(t *testing.T) {
 	}, gp.GetMapStringInt("ok"))
 	assert.Nil(t, gp.GetMapStringInt("nok"))
 	assert.Nil(t, gp.GetMapStringInt("bla"))
+	assert.Equal(t, map[string]int64{"foo": 333}, gp.GetMapStringInt("bla", map[string]int64{"foo": 333}))
 }
 
 func TestGPath_GetMapStringFloat(t *testing.T) {
@@ -169,4 +175,23 @@ func TestGPath_GetMapStringFloat(t *testing.T) {
 	}, gp.GetMapStringFloat("ok"))
 	assert.Nil(t, gp.GetMapStringFloat("nok"))
 	assert.Nil(t, gp.GetMapStringFloat("bla"))
+	assert.Equal(t, map[string]float64{"foo": 0.5}, gp.GetMapStringFloat("bla", map[string]float64{"foo": 0.5}))
+}
+
+func TestGPath_GetMapStringBool(t *testing.T) {
+	source := map[string]interface{}{
+		"ok": map[string]interface{}{
+			"foo": "123.5",
+		},
+		"nok": map[string]interface{}{
+			"foo": "bla",
+		},
+	}
+	gp := New(source)
+	assert.Equal(t, map[string]bool{
+		"foo": true,
+	}, gp.GetMapStringBool("ok"))
+	assert.Nil(t, gp.GetMapStringBool("nok"))
+	assert.Nil(t, gp.GetMapStringBool("bla"))
+	assert.Equal(t, map[string]bool{"foo": false}, gp.GetMapStringBool("bla", map[string]bool{"foo": false}))
 }
